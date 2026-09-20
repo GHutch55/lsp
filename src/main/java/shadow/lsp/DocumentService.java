@@ -1,6 +1,8 @@
 package shadow.lsp;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
@@ -19,7 +21,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
  * This is also where features like hover and go-to-definition
  * will eventually be implemented.
  */
-public class ShadowTextDocumentService implements TextDocumentService {
+public class DocumentService implements TextDocumentService {
 
   /*
    * Represents the editor that is connected to our server.
@@ -28,6 +30,15 @@ public class ShadowTextDocumentService implements TextDocumentService {
    * such as compiler errors (diagnostics).
    */
   private LanguageClient client;
+  private final DocumentManager documentManager;
+  private final Compiler compiler;
+  private final Logger logger;
+
+  public DocumentService() {
+    this.documentManager = new DocumentManager();
+    this.compiler = new Compiler();
+    this.logger = LogManager.getLogger(DocumentService.class);
+  }
 
   /*
    * Gives this class access to the editor's LanguageClient.
@@ -41,14 +52,15 @@ public class ShadowTextDocumentService implements TextDocumentService {
 
   /*
    * Called when the user opens a Shadow file.
-   *
-   * We will eventually store the file in memory and run the
-   * compiler on it here.
    */
   @Override
   public void didOpen(DidOpenTextDocumentParams params) {
+    String uri = params.getTextDocument().getUri();
+    String text = params.getTextDocument().getText();
 
-    // TODO: Store the opened document and check it for errors.
+    documentManager.open(uri, text);
+
+    logger.info("Opened: " + uri);
   }
 
   /*
@@ -56,26 +68,27 @@ public class ShadowTextDocumentService implements TextDocumentService {
    *
    * Since we are using full document syncing, the editor will
    * send us the entire file instead of only the changed part.
-   *
-   * We will eventually update our stored copy and run the
-   * compiler again here.
    */
   @Override
   public void didChange(DidChangeTextDocumentParams params) {
+    String uri = params.getTextDocument().getUri();
 
-    // TODO: Update the stored document and check it for errors.
+    String text = params.getContentChanges().get(0).getText();
+    documentManager.update(uri, text);
+
+    logger.info("Changed: " + uri);
   }
 
   /*
    * Called when the user closes a Shadow file.
-   *
-   * We will eventually remove the file from our in-memory
-   * document storage here.
    */
   @Override
   public void didClose(DidCloseTextDocumentParams params) {
+    String uri = params.getTextDocument().getUri();
 
-    // TODO: Remove the document from memory.
+    documentManager.close(uri);
+
+    logger.info("Closed: " + uri);
   }
 
   /*

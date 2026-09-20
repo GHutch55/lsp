@@ -1,0 +1,23 @@
+class BasicWithError {
+
+    public blah() => () {
+    
+      int a = 10;
+      int c = 5;
+        
+        
+      if(a > c and c < a and a < c)
+    	a = 14;
+      j = 16;
+        
+        Bob b = Bob:create(2);      
+    }
+    
+    private class Bob {
+        public create(int a) {        
+         int z = 14;
+
+        
+         }
+    }
+} 

@@ -1,0 +1,19 @@
+import shadow:utility@Random;
+
+class Imports
+{
+	public start(String[] args ) => ()
+	{
+		int a = 10;
+		
+		Random r = Random:create();
+		
+		a += r.nextInt();
+		
+		shadow:utility@Random v = shadow:utility@Random:create();
+		
+		a *= v.nextInt();
+					
+	}
+}
+

@@ -18,13 +18,13 @@ import org.eclipse.lsp4j.services.WorkspaceService;
  * LSP4J handles communication with the editor and calls the methods
  * in this class when the editor sends LSP requests.
  */
-public class ShadowLanguageServer implements LanguageServer {
+public class LspServer implements LanguageServer {
 
   /*
    * Handles things related to individual Shadow files, like opening,
    * changing, and eventually getting hover information.
    */
-  private final ShadowTextDocumentService textDocumentService;
+  private final DocumentService textDocumentService;
 
   /*
    * Represents the editor connected to our server.
@@ -36,8 +36,8 @@ public class ShadowLanguageServer implements LanguageServer {
   /*
    * Create the text document service when the server starts.
    */
-  public ShadowLanguageServer() {
-    this.textDocumentService = new ShadowTextDocumentService();
+  public LspServer() {
+    this.textDocumentService = new DocumentService();
   }
 
   /*

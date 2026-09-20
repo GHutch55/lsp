@@ -6,8 +6,8 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
 
 public class Main {
-
   public static void main(String[] args) {
+
     // LSP servers communicate with the editor through stdin/stdout.
     // IMPORTANT: stdout is reserved for LSP protocol messages,
     // so debugging information should be written to stderr.
@@ -17,7 +17,7 @@ public class Main {
     OutputStream out = System.out;
 
     // Our implementation of the Language Server Protocol.
-    ShadowLanguageServer server = new ShadowLanguageServer();
+    LspServer server = new LspServer();
 
     // LSP4J's Launcher handles the JSON-RPC communication between
     // the editor (LSP client) and our Shadow language server.
