@@ -4,15 +4,22 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import shadow.ConfigurationException;
@@ -71,9 +78,19 @@ public class DocumentService implements TextDocumentService {
     if (path != null) {
       try {
         CheckResult result = compiler.check(path);
+        List<Diagnostic> diagnostics = new ArrayList<>();
 
         for (ShadowException error : result.errors) {
-          logger.info("Compiler error in {}: {}", uri, error.getMessageText());
+          diagnostics.add(toDiagnostic(error, DiagnosticSeverity.Error));
+        }
+
+        for (ShadowException warning : result.warnings) {
+          diagnostics.add(toDiagnostic(warning, DiagnosticSeverity.Warning));
+        }
+
+        PublishDiagnosticsParams diagParams = new PublishDiagnosticsParams(uri, diagnostics);
+        if (client != null) {
+          client.publishDiagnostics(diagParams);
         }
       } catch (IOException | ConfigurationException e) {
         logger.error("Compile check failed for {}", uri, e);
@@ -107,6 +124,11 @@ public class DocumentService implements TextDocumentService {
     String uri = params.getTextDocument().getUri();
 
     documentManager.close(uri);
+    PublishDiagnosticsParams diagParams = new PublishDiagnosticsParams(uri, List.of());
+
+    if (client != null) {
+      client.publishDiagnostics(diagParams);
+    }
 
     logger.info("Closed: {}", uri);
   }
@@ -126,9 +148,19 @@ public class DocumentService implements TextDocumentService {
     if (path != null) {
       try {
         CheckResult result = compiler.check(path);
+        List<Diagnostic> diagnostics = new ArrayList<>();
 
         for (ShadowException error : result.errors) {
-          logger.info("Compiler error in {}: {}", uri, error.getMessageText());
+          diagnostics.add(toDiagnostic(error, DiagnosticSeverity.Error));
+        }
+
+        for (ShadowException warning : result.warnings) {
+          diagnostics.add(toDiagnostic(warning, DiagnosticSeverity.Warning));
+        }
+
+        PublishDiagnosticsParams diagParams = new PublishDiagnosticsParams(uri, diagnostics);
+        if (client != null) {
+          client.publishDiagnostics(diagParams);
         }
       } catch (IOException | ConfigurationException e) {
         logger.error("Compile check failed for {}", uri, e);
@@ -161,5 +193,40 @@ public class DocumentService implements TextDocumentService {
       logger.error("Could not convert URI to Path: {}", uri, e);
       return null;
     }
+  }
+
+  /*
+   * Construct a Diagnostic from a ShadowException, passing the severity in as
+   * well (warning or error)
+   */
+  public Diagnostic toDiagnostic(ShadowException exception, DiagnosticSeverity severity) {
+    int lineStart = exception.lineStart();
+    int lineEnd = exception.lineEnd();
+    int columnStart = exception.columnStart();
+    int columnEnd = exception.columnEnd();
+
+    int rangeLineStart, rangeLineEnd, rangeColStart, rangeColEnd;
+
+    if (lineStart == -1) {
+      // fallback range
+      rangeLineStart = 0;
+      rangeLineEnd = 0;
+      rangeColStart = 0;
+      rangeColEnd = 0;
+    } else {
+      // note that the lines are 1-indexed
+      // but the columns are 0-indexed and inclusive within the range
+      rangeLineStart = lineStart - 1;
+      rangeLineEnd = lineEnd - 1;
+      rangeColStart = columnStart;
+      rangeColEnd = columnEnd + 1;
+    }
+
+    Position start = new Position(rangeLineStart, rangeColStart);
+    Position end = new Position(rangeLineEnd, rangeColEnd);
+
+    Range range = new Range(start, end);
+
+    return new Diagnostic(range, exception.getMessageText(), severity, "Shadow");
   }
 }
