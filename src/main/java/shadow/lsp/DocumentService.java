@@ -1,5 +1,9 @@
 package shadow.lsp;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,6 +15,9 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
+import shadow.ConfigurationException;
+import shadow.ShadowException;
+import shadow.lsp.Compiler.CheckResult;
 
 /*
  * Handles things that happen to Shadow source files.
@@ -59,8 +66,21 @@ public class DocumentService implements TextDocumentService {
     String text = params.getTextDocument().getText();
 
     documentManager.open(uri, text);
+    Path path = uriToPath(uri);
 
-    logger.info("Opened: " + uri);
+    if (path != null) {
+      try {
+        CheckResult result = compiler.check(path);
+
+        for (ShadowException error : result.errors) {
+          logger.info("Compiler error in {}: {}", uri, error.getMessageText());
+        }
+      } catch (IOException | ConfigurationException e) {
+        logger.error("Compile check failed for {}", uri, e);
+      }
+    }
+
+    logger.info("Opened: {}", uri);
   }
 
   /*
@@ -76,7 +96,7 @@ public class DocumentService implements TextDocumentService {
     String text = params.getContentChanges().get(0).getText();
     documentManager.update(uri, text);
 
-    logger.info("Changed: " + uri);
+    logger.info("Changed: {}", uri);
   }
 
   /*
@@ -88,19 +108,34 @@ public class DocumentService implements TextDocumentService {
 
     documentManager.close(uri);
 
-    logger.info("Closed: " + uri);
+    logger.info("Closed: {}", uri);
   }
 
   /*
-   * Called when the user saves a Shadow file.
+   * Called when the user saves a Shadow file
    *
-   * We may use this later if we want to do anything special
-   * when a file is saved.
+   * Files are only compiled once saved to disk (see Compiler, TypeChecker has
+   * no in-memory source entry point). didChange only updates the in-memory
+   * buffer.
    */
   @Override
   public void didSave(DidSaveTextDocumentParams params) {
+    String uri = params.getTextDocument().getUri();
+    Path path = uriToPath(uri);
 
-    // TODO: Handle saved documents later.
+    if (path != null) {
+      try {
+        CheckResult result = compiler.check(path);
+
+        for (ShadowException error : result.errors) {
+          logger.info("Compiler error in {}: {}", uri, error.getMessageText());
+        }
+      } catch (IOException | ConfigurationException e) {
+        logger.error("Compile check failed for {}", uri, e);
+      }
+    }
+
+    logger.info("Saved: {}", uri);
   }
 
   /*
@@ -117,5 +152,14 @@ public class DocumentService implements TextDocumentService {
      * so return null for now.
      */
     return CompletableFuture.completedFuture(null);
+  }
+
+  private Path uriToPath(String uri) {
+    try {
+      return Paths.get(URI.create(uri));
+    } catch (Exception e) {
+      logger.error("Could not convert URI to Path: {}", uri, e);
+      return null;
+    }
   }
 }

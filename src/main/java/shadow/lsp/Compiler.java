@@ -3,8 +3,11 @@ package shadow.lsp;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import shadow.ConfigurationException;
 import shadow.ShadowException;
@@ -49,17 +52,42 @@ public class Compiler {
       TypeChecker.typeCheck(files, reporter, true);
     } catch (ShadowException e) {
       // A ShadowException here means "the code has an error" (expected
-      // outcome), not "checking failed" — so it's captured as data, not
+      // outcome), not "checking failed", so it's captured as data, not
       // rethrown. IOException/ConfigurationException are real failures and
       // propagate normally.
       reporter.addError(e);
     }
 
-    // TODO: same logical error can appear more than once in this list
-    // (seen: one undeclared-variable reference reported twice, likely from
-    // outer/inner class node revisiting in TypeChecker). Check whether
-    // ErrorReporter.removeRedundantErrors() handles this, or add dedup here,
-    // before this list becomes LSP Diagnostics.
-    return new CheckResult(reporter.getErrorList(), reporter.getWarningList());
+    // The compiler can report the same logical error twice for certain
+    // statement shapes (e.g. "j = 16;", the left-hand side gets resolved
+    // once via visitChildren() and again via isValidAssignment(), each
+    // independently adding the same error). Deduplicated below.
+    List<ShadowException> errors = deduplicate(reporter.getErrorList());
+    List<ShadowException> warnings = deduplicate(reporter.getWarningList());
+
+    return new CheckResult(errors, warnings);
+  }
+
+  private List<ShadowException> deduplicate(List<ShadowException> list) {
+    Set<String> seen = new HashSet<>();
+    List<ShadowException> result = new ArrayList<>();
+
+    for (ShadowException exception : list) {
+      String key = exception.getError()
+          + "|"
+          + exception.getMessageText()
+          + "|"
+          + exception.lineStart()
+          + "|"
+          + exception.columnStart();
+
+      // opting for seen.add() instead of seen.contains() + seen.add() so
+      // there's not two lookups
+      if (seen.add(key)) {
+        result.add(exception);
+      }
+    }
+
+    return result;
   }
 }

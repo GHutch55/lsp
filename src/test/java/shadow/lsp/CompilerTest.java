@@ -22,6 +22,7 @@ class CompilerTest {
 
   @Test
   void cleanFileHasNoErrors() throws Exception {
+    System.out.println("\nTesting CleanFileHasNoErrors...");
     Path file = Paths.get("tests/typechecker/Basic.shadow");
     Compiler.CheckResult result = compiler.check(file);
 
@@ -30,6 +31,7 @@ class CompilerTest {
 
   @Test
   void fileWithImportsHasNoErrors() throws Exception {
+    System.out.println("\nTesting FileWithImportsHasNoErrors...");
     Path file = Paths.get("tests/typechecker/Imports.shadow");
     Compiler.CheckResult result = compiler.check(file);
 
@@ -38,6 +40,7 @@ class CompilerTest {
 
   @Test
   void nonexistentFileReturnsEmptyResult() throws Exception {
+    System.out.println("\nTesting NonExistentFIleReturnsEmptyResult...");
     Path file = Paths.get("tests/typechecker/DoesNotExist.shadow");
     Compiler.CheckResult result = compiler.check(file);
 
@@ -47,6 +50,7 @@ class CompilerTest {
 
   @Test
   void fileWithErrorReportsIt() throws Exception {
+    System.out.println("\nTesting FileWithErrorReportsIt...");
     Path file = Paths.get("tests/typechecker/BasicWithError.shadow");
     Compiler.CheckResult result = compiler.check(file);
 
@@ -54,11 +58,19 @@ class CompilerTest {
 
     for (var error : result.errors) {
       System.out.println(error.getMessageText());
+
+      // adding to align column and lines later
+      System.out.println("Error line start: " + error.lineStart());
+      System.out.println("Error line end: " + error.lineEnd());
+
+      System.out.println("Error column start: " + error.columnStart());
+      System.out.println("Error column end: " + error.columnEnd());
     }
   }
 
   @Test
   void resultListsAreImmutable() throws Exception {
+    System.out.println("\nTesting ResultListsAreImmutable...");
     Path file = Paths.get("tests/typechecker/Basic.shadow");
     Compiler.CheckResult result = compiler.check(file);
 

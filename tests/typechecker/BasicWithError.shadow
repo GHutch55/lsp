@@ -8,7 +8,7 @@ class BasicWithError {
         
       if(a > c and c < a and a < c)
     	a = 14;
-      j = 16;
+      pepperoni = 16;
         
         Bob b = Bob:create(2);      
     }
