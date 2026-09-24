@@ -1,6 +1,6 @@
 # Shadow LSP
 
-A [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server for **Shadow**, a compiled language made by my professor, Dr. Barry Wittman. Built in Java with [LSP4J](https://github.com/eclipse-lsp4j/lsp4j) so you can actually get real-time compiler errors/warnings in your editor instead of running the compiler by hand every time.
+A [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server for **Shadow**, a compiled language made by my professor, [Professor's Name]. Built in Java with [LSP4J](https://github.com/eclipse-lsp4j/lsp4j) so you can actually get real-time compiler errors/warnings in your editor instead of running the compiler by hand every time.
 
 Currently working on IDE integration for IntelliJ and VS Code.
 
@@ -29,24 +29,9 @@ Basically, it hooks into Shadow's real compiler and runs it in the background wh
 
 **Found and fixed an actual bug in the compiler's error reporting.** For certain assignment statements, the compiler reports the exact same error twice. I traced it all the way down to the specific method in the type-checker causing it. Instead of touching the compiler itself, I just filter out duplicates before sending anything to the editor.
 
-## Running it
-
-**You need:** Java 17+, Maven
-
-```bash
-mvn test
-```
-
-The server runs over stdio like every other LSP server — point any LSP-compatible client at the built jar and it'll work.
-
 ## Testing
 
-I wrote a JUnit suite that actually runs the real compiler (not mocks) to check:
-- Clean files come back with zero errors
-- Broken files come back with the right error
-- The line/column conversion math is actually correct
-- Results can't be accidentally mutated
-- Opening/saving a file for real triggers a real compile
+There's a JUnit suite that runs the real compiler end-to-end to check the diagnostics pipeline actually works — clean files, files with real errors, correct line/column conversion, and document lifecycle events triggering real compiles.
 
 ## What's left
 
