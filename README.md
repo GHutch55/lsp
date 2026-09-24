@@ -1,6 +1,6 @@
 # Shadow LSP
 
-A [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server for **Shadow**, a compiled language made by my professor, [Professor's Name]. Built in Java with [LSP4J](https://github.com/eclipse-lsp4j/lsp4j) so you can actually get real-time compiler errors/warnings in your editor instead of running the compiler by hand every time.
+A [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server for **Shadow**, a compiled language made by my professor, Dr. Barry Wittman. Built in Java with [LSP4J](https://github.com/eclipse-lsp4j/lsp4j) so you can actually get real-time compiler errors/warnings in your editor instead of running the compiler by hand every time.
 
 Currently working on IDE integration for IntelliJ and VS Code.
 
